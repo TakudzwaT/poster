@@ -1,0 +1,1028 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tensile Strength Investigation - Interactive Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #FFD700;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .section {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .material-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .material-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .material-card:hover {
+            transform: translateY(-5px);
+            border-color: #FFD700;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .material-card.selected {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .material-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .simulation-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .properties-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .properties-table th,
+        .properties-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .properties-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+        }
+
+        .application-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .application-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #FFD700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00C851, #FFD700, #FF4444);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .specimen-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .specimen {
+            width: 200px;
+            height: 20px;
+            background: linear-gradient(90deg, #C0C0C0, #808080);
+            border-radius: 10px;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .specimen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stress-indicator {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .stress-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .loading-animation {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #FFD700;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #00C851;
+        }
+
+        .warning-panel {
+            background: rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #FFC107;
+        }
+
+        .conclusion-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .conclusion-points li {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #00C851;
+            transition: all 0.3s ease;
+        }
+
+        .conclusion-points li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 Tensile Strength Investigation</h1>
+            <p>How metals react under tensile stress and implications for industrial use</p>
+        </div>
+
+        <div class="nav-buttons">
+            <div class="nav-btn" onclick="showSection('overview')">📋 Overview</div>
+            <div class="nav-btn" onclick="showSection('simulation')">⚡ Live Simulation</div>
+            <div class="nav-btn" onclick="showSection('materials')">🔩 Material Properties</div>
+            <div class="nav-btn" onclick="showSection('applications')">🏗️ Applications</div>
+            <div class="nav-btn active" onclick="showSection('conclusions')">📊 Conclusions</div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section" id="overview">
+            <h2>🎯 Research Objective</h2>
+            <p style="font-size: 1.1em; line-height: 1.6; margin: 20px 0;">
+                To determine the most suitable industrial uses of metals based on results obtained from tensile testing.
+            </p>
+            
+            <div class="info-panel">
+                <h3>📚 What is Tensile Testing?</h3>
+                <p>Tensile testing involves applying a controlled tensile (pulling) force to a material specimen until it fails. This test reveals critical mechanical properties including:</p>
+                <ul style="margin: 15px 0; padding-left: 20px;">
+                    <li><strong>Yield Strength:</strong> Stress at which permanent deformation begins</li>
+                    <li><strong>Ultimate Tensile Strength:</strong> Maximum stress the material can withstand</li>
+                    <li><strong>Elongation:</strong> How much the material can stretch before breaking</li>
+                    <li><strong>Modulus of Elasticity:</strong> Material stiffness (resistance to deformation)</li>
+                </ul>
+            </div>
+
+            <h3>🧪 Materials Tested</h3>
+            <div class="material-grid">
+                <div class="material-card">
+                    <span class="material-icon">⚪</span>
+                    <h4>Aluminum</h4>
+                    <p>Lightweight, high area reduction, ductile fracture</p>
+                </div>
+                <div class="material-card">
+                    <span class="material-icon">🟠</span>
+                    <h4>Copper</h4>
+                    <p>Excellent ductility, significant plastic deformation</p>
+                </div>
+                <div class="material-card">
+                    <span class="material-icon">🟡</span>
+                    <h4>Brass</h4>
+                    <p>Higher strength than copper, brittle fracture</p>
+                </div>
+                <div class="material-card">
+                    <span class="material-icon">⚫</span>
+                    <h4>Mild Steel</h4>
+                    <p>Highest strength, clear yield point, ductile</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Section -->
+        <div class="section" id="simulation">
+            <h2>⚡ Interactive Tensile Test Simulation</h2>
+            
+            <div class="simulation-controls">
+                <select id="materialSelect" onchange="selectMaterial()">
+                    <option value="aluminum">Aluminum</option>
+                    <option value="copper">Copper</option>
+                    <option value="brass">Brass</option>
+                    <option value="steel">Mild Steel</option>
+                </select>
+                <button class="control-btn" onclick="startSimulation()" id="startBtn">▶️ Start Test</button>
+                <button class="control-btn" onclick="pauseSimulation()" id="pauseBtn" disabled="">⏸️ Pause</button>
+                <button class="control-btn" onclick="resetSimulation()" id="resetBtn">🔄 Reset</button>
+            </div>
+
+            <div class="specimen-visual">
+                <div class="specimen" id="specimen" style="background: rgb(51, 51, 51); transform: scaleX(0.8);"></div>
+            </div>
+
+            <div class="stress-indicator">
+                <div>Applied Stress</div>
+                <div class="stress-value" id="stressValue">286.0 MPa</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="stressProgress" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="stressStrainChart" style="box-sizing: border-box; display: block; height: 360px; width: 1058px;" width="1058" height="360"></canvas>
+            </div>
+
+            <div class="warning-panel" id="warningPanel" style="display: block;">
+                <strong>⚠️ Material Failure Imminent!</strong>
+                <p>The specimen is approaching its ultimate tensile strength. Fracture will occur soon.</p>
+            </div>
+        </div>
+
+        <!-- Materials Section -->
+        <div class="section" id="materials">
+            <h2>🔩 Material Properties Comparison</h2>
+            
+            <table class="properties-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Yield Strength (MPa)</th>
+                        <th>Ultimate Tensile Strength (MPa)</th>
+                        <th>Elongation (%)</th>
+                        <th>Young's Modulus (GPa)</th>
+                        <th>Fracture Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Aluminum</strong></td>
+                        <td>83</td>
+                        <td>133</td>
+                        <td>~15</td>
+                        <td>69</td>
+                        <td>Ductile (Cup &amp; Cone)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Copper</strong></td>
+                        <td>52</td>
+                        <td>286</td>
+                        <td>~50</td>
+                        <td>110</td>
+                        <td>Highly Ductile</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Brass</strong></td>
+                        <td>68</td>
+                        <td>534</td>
+                        <td>~20</td>
+                        <td>100</td>
+                        <td>Brittle Fracture</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mild Steel</strong></td>
+                        <td>253</td>
+                        <td>462</td>
+                        <td>~25</td>
+                        <td>200</td>
+                        <td>Ductile with Necking</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="chart-container">
+                <canvas id="comparisonChart" style="box-sizing: border-box; display: block; height: 360px; width: 1058px;" width="1058" height="360"></canvas>
+            </div>
+        </div>
+
+        <!-- Applications Section -->
+        <div class="section" id="applications">
+            <h2>🏗️ Industrial Applications</h2>
+            
+            <div class="application-grid">
+                <div class="application-card">
+                    <h3>⚫ Mild Steel Applications</h3>
+                    <ul>
+                        <li><strong>Structural Steel:</strong> Buildings &amp; bridges (high strength)</li>
+                        <li><strong>Automotive Frames:</strong> Impact absorption capability</li>
+                        <li><strong>Pressure Vessels:</strong> Can withstand internal pressure</li>
+                        <li><strong>Machinery:</strong> Maintains shape under heavy loads</li>
+                        <li><strong>Reinforcement Bars:</strong> Improves concrete tensile strength</li>
+                    </ul>
+                </div>
+
+                <div class="application-card">
+                    <h3>🟡 Brass Applications</h3>
+                    <ul>
+                        <li><strong>Plumbing Fittings:</strong> Corrosion resistance in water</li>
+                        <li><strong>Musical Instruments:</strong> Excellent acoustic properties</li>
+                        <li><strong>Decorative Hardware:</strong> Aesthetic appeal</li>
+                        <li><strong>Electrical Connectors:</strong> Good conductivity + strength</li>
+                        <li><strong>Marine Hardware:</strong> Saltwater corrosion resistance</li>
+                    </ul>
+                </div>
+
+                <div class="application-card">
+                    <h3>🟠 Copper Applications</h3>
+                    <ul>
+                        <li><strong>Electrical Wiring:</strong> Best commercial electrical conductor</li>
+                        <li><strong>Heat Exchangers:</strong> High thermal conductivity</li>
+                        <li><strong>Roofing &amp; Gutters:</strong> Weather durability</li>
+                        <li><strong>Plumbing Pipes:</strong> Non-toxic, corrosion-resistant</li>
+                        <li><strong>PCB Circuits:</strong> Conductive tracks for electronics</li>
+                    </ul>
+                </div>
+
+                <div class="application-card">
+                    <h3>⚪ Aluminum Applications</h3>
+                    <ul>
+                        <li><strong>Aerospace:</strong> Lightweight yet strong when alloyed</li>
+                        <li><strong>Automotive Parts:</strong> Weight savings improve efficiency</li>
+                        <li><strong>Packaging:</strong> Lightweight, recyclable, non-toxic</li>
+                        <li><strong>Building Facades:</strong> Corrosion-resistant, extrudable</li>
+                        <li><strong>Electronics Casings:</strong> Good strength-to-weight ratio</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conclusions Section -->
+        <div class="section active" id="conclusions">
+            <h2>📊 Key Conclusions</h2>
+            
+            <ul class="conclusion-points">
+                <li>
+                    <strong>🎯 Determines Mechanical Suitability:</strong> 
+                    Tensile testing reveals yield strength, ultimate tensile strength, elongation, and modulus of elasticity, helping engineers select materials that can safely carry expected loads.
+                </li>
+                <li>
+                    <strong>🛡️ Ensures Safety and Reliability:</strong>
+                    Materials in critical applications (bridges, vehicles, pressure vessels) must not fail unexpectedly. Tensile testing identifies materials meeting required strength and ductility levels.
+                </li>
+                <li>
+                    <strong>💪 Assesses Ductility and Toughness:</strong>
+                    Ductile materials can absorb energy and deform before failure, making them safer in impact-prone environments compared to brittle materials that fail suddenly.
+                </li>
+                <li>
+                    <strong>💰 Supports Cost-Effective Design:</strong>
+                    Understanding material limits enables lightweighting and avoids over-engineering, reducing costs while maintaining performance.
+                </li>
+                <li>
+                    <strong>🏭 Informs Manufacturing Decisions:</strong>
+                    Materials behave differently during forming, machining, or welding. Tensile data helps predict manufacturing behavior and tool requirements.
+                </li>
+                <li>
+                    <strong>📋 Compliance with Standards:</strong>
+                    Industries have strict material standards (ASTM, ISO). Tensile test data ensures materials meet certification and regulatory requirements.
+                </li>
+                <li>
+                    <strong>🔬 Enables Material Comparisons:</strong>
+                    Direct comparison between materials under similar conditions is crucial for R&amp;D and material selection in engineering applications.
+                </li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>University of the Witwatersrand - School of Chemical and Metallurgical Engineering</p>
+            <p>Experimental Investigation of Tensile Strength of Metals</p>
+        </div>
+    </div>
+
+    <script>
+        // Material properties data
+        const materials = {
+            aluminum: {
+                name: 'Aluminum',
+                color: '#C0C0C0',
+                yieldStrength: 83,
+                ultimateStrength: 133,
+                elongation: 15,
+                modulus: 69,
+                fractureType: 'Ductile'
+            },
+            copper: {
+                name: 'Copper',
+                color: '#B87333',
+                yieldStrength: 52,
+                ultimateStrength: 286,
+                elongation: 50,
+                modulus: 110,
+                fractureType: 'Highly Ductile'
+            },
+            brass: {
+                name: 'Brass',
+                color: '#B5A642',
+                yieldStrength: 68,
+                ultimateStrength: 534,
+                elongation: 20,
+                modulus: 100,
+                fractureType: 'Brittle'
+            },
+            steel: {
+                name: 'Mild Steel',
+                color: '#36454F',
+                yieldStrength: 253,
+                ultimateStrength: 462,
+                elongation: 25,
+                modulus: 200,
+                fractureType: 'Ductile'
+            }
+        };
+
+        let currentMaterial = 'aluminum';
+        let simulationRunning = false;
+        let currentStress = 0;
+        let currentStrain = 0;
+        let simulationData = [];
+        let stressStrainChart = null;
+        let comparisonChart = null;
+        let simulationInterval = null;
+
+        // Navigation
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(sectionName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Initialize charts when sections are shown
+            if (sectionName === 'simulation') {
+                setTimeout(initializeStressStrainChart, 100);
+            } else if (sectionName === 'materials') {
+                setTimeout(initializeComparisonChart, 100);
+            }
+        }
+
+        // Material selection
+        function selectMaterial() {
+            currentMaterial = document.getElementById('materialSelect').value;
+            resetSimulation();
+            updateSpecimenColor();
+        }
+
+        function updateSpecimenColor() {
+            const specimen = document.getElementById('specimen');
+            const material = materials[currentMaterial];
+            specimen.style.background = `linear-gradient(90deg, ${material.color}, ${adjustBrightness(material.color, -20)})`;
+        }
+
+        function adjustBrightness(color, amount) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * amount);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+
+        // Simulation controls
+        function startSimulation() {
+            if (!simulationRunning) {
+                simulationRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                
+                simulationInterval = setInterval(updateSimulation, 100);
+            }
+        }
+
+        function pauseSimulation() {
+            simulationRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            clearInterval(simulationInterval);
+        }
+
+        function resetSimulation() {
+            pauseSimulation();
+            currentStress = 0;
+            currentStrain = 0;
+            simulationData = [];
+            
+            document.getElementById('stressValue').textContent = '0 MPa';
+            document.getElementById('stressProgress').style.width = '0%';
+            document.getElementById('warningPanel').style.display = 'none';
+            
+            const specimen = document.getElementById('specimen');
+            specimen.style.transform = 'scaleX(1)';
+            specimen.style.background = `linear-gradient(90deg, ${materials[currentMaterial].color}, ${adjustBrightness(materials[currentMaterial].color, -20)})`;
+            
+            if (stressStrainChart) {
+                stressStrainChart.data.datasets[0].data = [];
+                stressStrainChart.update();
+            }
+        }
+
+        function updateSimulation() {
+            const material = materials[currentMaterial];
+            const stressIncrement = 2; // MPa per step
+            
+            currentStress += stressIncrement;
+            
+            // Calculate strain based on material properties
+            if (currentStress <= material.yieldStrength) {
+                // Elastic region
+                currentStrain = currentStress / (material.modulus * 1000) * 100; // Convert to percentage
+            } else {
+                // Plastic region - more complex strain calculation
+                const plasticStrain = (currentStress - material.yieldStrength) / (material.modulus * 100);
+                currentStrain = (material.yieldStrength / (material.modulus * 1000) * 100) + plasticStrain;
+            }
+            
+            // Update displays
+            document.getElementById('stressValue').textContent = `${currentStress.toFixed(1)} MPa`;
+            
+            const progressPercent = (currentStress / material.ultimateStrength) * 100;
+            document.getElementById('stressProgress').style.width = `${Math.min(progressPercent, 100)}%`;
+            
+            // Visual specimen deformation
+            const specimen = document.getElementById('specimen');
+            const stretchFactor = 1 + (currentStrain / 100);
+            specimen.style.transform = `scaleX(${stretchFactor})`;
+            
+            // Color change based on stress level
+            if (currentStress > material.yieldStrength * 0.8) {
+                const redIntensity = Math.min(255, (currentStress / material.ultimateStrength) * 255);
+                specimen.style.background = `linear-gradient(90deg, rgb(${redIntensity}, 100, 100), rgb(${redIntensity}, 50, 50))`;
+            }
+            
+            // Warning near ultimate strength
+            if (currentStress > material.ultimateStrength * 0.9) {
+                document.getElementById('warningPanel').style.display = 'block';
+            }
+            
+            // Add data point to chart
+            simulationData.push({x: currentStrain, y: currentStress});
+            
+            if (stressStrainChart) {
+                stressStrainChart.data.datasets[0].data = simulationData;
+                stressStrainChart.update('none');
+            }
+            
+            // Check for failure
+            if (currentStress >= material.ultimateStrength) {
+                // Simulate fracture
+                specimen.style.background = 'linear-gradient(90deg, #8B0000, #FF0000)';
+                specimen.style.transform = `scaleX(${stretchFactor * 1.2})`;
+                
+                setTimeout(() => {
+                    specimen.style.background = '#333';
+                    specimen.style.transform = 'scaleX(0.8)';
+                }, 200);
+                
+                pauseSimulation();
+                alert(`${material.name} specimen has fractured! Final stress: ${currentStress.toFixed(1)} MPa`);
+            }
+        }
+
+        // Chart initialization
+        function initializeStressStrainChart() {
+            const ctx = document.getElementById('stressStrainChart');
+            if (!ctx) return;
+            
+            if (stressStrainChart) {
+                stressStrainChart.destroy();
+            }
+            
+            stressStrainChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: materials[currentMaterial].name,
+                        data: simulationData,
+                        borderColor: materials[currentMaterial].color,
+                        backgroundColor: materials[currentMaterial].color + '20',
+                        borderWidth: 3,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Real-Time Stress-Strain Curve',
+                            color: '#333',
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: {
+                            labels: { color: '#333' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Strain (%)',
+                                color: '#333',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: { color: '#333' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Stress (MPa)',
+                                color: '#333',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: { color: '#333' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+        }
+
+        function initializeComparisonChart() {
+            const ctx = document.getElementById('comparisonChart');
+            if (!ctx) return;
+            
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            const materialNames = Object.keys(materials).map(key => materials[key].name);
+            const yieldStrengths = Object.keys(materials).map(key => materials[key].yieldStrength);
+            const ultimateStrengths = Object.keys(materials).map(key => materials[key].ultimateStrength);
+            const elongations = Object.keys(materials).map(key => materials[key].elongation);
+            
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: materialNames,
+                    datasets: [
+                        {
+                            label: 'Yield Strength (MPa)',
+                            data: yieldStrengths,
+                            backgroundColor: '#FF6B6B80',
+                            borderColor: '#FF6B6B',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Ultimate Tensile Strength (MPa)',
+                            data: ultimateStrengths,
+                            backgroundColor: '#4ECDC480',
+                            borderColor: '#4ECDC4',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Elongation (%)',
+                            data: elongations,
+                            backgroundColor: '#45B7D180',
+                            borderColor: '#45B7D1',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Material Properties Comparison',
+                            color: '#333',
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: {
+                            labels: { color: '#333' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#333' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Strength (MPa)',
+                                color: '#333',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: { color: '#333' },
+                            grid: { color: 'rgba(0,0,0,0.1)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Elongation (%)',
+                                color: '#333',
+                                font: { weight: 'bold' }
+                            },
+                            ticks: { color: '#333' },
+                            grid: {
+                                drawOnChartArea: false,
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSpecimenColor();
+            
+            // Add click animations to material cards
+            document.querySelectorAll('.material-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    document.querySelectorAll('.material-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    // Get material from card text
+                    const materialName = this.querySelector('h4').textContent.toLowerCase().replace(' ', '');
+                    if (materialName === 'mildsteel') {
+                        document.getElementById('materialSelect').value = 'steel';
+                        currentMaterial = 'steel';
+                    } else {
+                        document.getElementById('materialSelect').value = materialName;
+                        currentMaterial = materialName;
+                    }
+                    updateSpecimenColor();
+                    resetSimulation();
+                });
+            });
+            
+            // Auto-advance simulation demo
+            setTimeout(() => {
+                if (document.getElementById('simulation').classList.contains('active')) {
+                    startSimulation();
+                }
+            }, 2000);
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && document.getElementById('simulation').classList.contains('active')) {
+                e.preventDefault();
+                if (simulationRunning) {
+                    pauseSimulation();
+                } else {
+                    startSimulation();
+                }
+            } else if (e.code === 'KeyR' && document.getElementById('simulation').classList.contains('active')) {
+                e.preventDefault();
+                resetSimulation();
+            }
+        });
+
+        // Add touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                const sections = ['overview', 'simulation', 'materials', 'applications', 'conclusions'];
+                const currentIndex = sections.findIndex(section => 
+                    document.getElementById(section).classList.contains('active')
+                );
+                
+                if (diff > 0 && currentIndex < sections.length - 1) {
+                    // Swipe left - next section
+                    showSection(sections[currentIndex + 1]);
+                    document.querySelectorAll('.nav-btn')[currentIndex + 1].classList.add('active');
+                } else if (diff < 0 && currentIndex > 0) {
+                    // Swipe right - previous section
+                    showSection(sections[currentIndex - 1]);
+                    document.querySelectorAll('.nav-btn')[currentIndex - 1].classList.add('active');
+                }
+            }
+        }
+    </script>
+
+
+                        </body></html>
